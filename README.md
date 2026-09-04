@@ -12,7 +12,7 @@ Built as a semester project for **Full Stack Development (CSUL504 / CAUL402 / CD
 - **Explore page** — browse sample and community-built portfolios
 - **Image upload** — add a profile picture to your portfolio
 - **Responsive design** — built with Tailwind CSS
-
+~~
 ## Tech Stack
 
 **Frontend:** React, React Router, Tailwind CSS, Axios
