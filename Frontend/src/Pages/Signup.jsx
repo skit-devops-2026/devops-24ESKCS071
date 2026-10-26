@@ -1,8 +1,42 @@
-import { Link } from 'react-router'
+import { useState } from 'react'
+import { Link, useNavigate } from 'react-router'
 import { motion } from 'framer-motion'
-import { Mail, Lock, User } from 'lucide-react'
+import { LuMail as Mail, LuLock as Lock, LuUser as User, LuLoaderCircle as Loader2, LuCircleAlert as AlertCircle } from 'react-icons/lu'
+import { authApi } from '../lib/api'
 
 export default function Signup() {
+  const [name, setName] = useState('')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(null)
+  const navigate = useNavigate()
+
+  const handleSignup = async (e) => {
+    e.preventDefault()
+    if (!name || !email || !password) {
+      setError('Please fill in all fields.')
+      return
+    }
+
+    setLoading(true)
+    setError(null)
+
+    try {
+      const res = await authApi.register({ name, email, password })
+      if (res.success && res.token) {
+        localStorage.setItem('craftcv_token', res.token)
+        localStorage.setItem('craftcv_user', JSON.stringify(res.user))
+        navigate('/dashboard')
+      }
+    } catch (err) {
+      console.error('Signup error:', err)
+      setError(err.response?.data?.message || 'Failed to create account.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   return (
     <div className="bg-black min-h-screen flex items-center justify-center relative">
       <Link
@@ -21,13 +55,23 @@ export default function Signup() {
         <h1 className="elsie-black text-4xl text-white leading-tight">Create your account.</h1>
         <p className="text-white/50 text-sm mt-2">Build a resume that opens doors.</p>
 
-        <form onSubmit={(e) => e.preventDefault()} className="flex flex-col gap-4 mt-8">
+        {error && (
+          <div className="mt-4 p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs flex items-center gap-2">
+            <AlertCircle size={14} className="shrink-0" />
+            <span>{error}</span>
+          </div>
+        )}
+
+        <form onSubmit={handleSignup} className="flex flex-col gap-4 mt-6">
           <div className="flex flex-col gap-1.5">
             <label className="text-white/60 text-xs font-medium tracking-wide">Full Name</label>
             <div className="relative">
               <User className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/30" size={15} />
               <input
                 type="text"
+                required
+                value={name}
+                onChange={(e) => setName(e.target.value)}
                 placeholder="Jane Smith"
                 className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 pl-10 w-full text-white placeholder-white/30 focus:outline-none focus:border-white/40 text-sm transition-colors"
               />
@@ -40,6 +84,9 @@ export default function Signup() {
               <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/30" size={15} />
               <input
                 type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@example.com"
                 className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 pl-10 w-full text-white placeholder-white/30 focus:outline-none focus:border-white/40 text-sm transition-colors"
               />
@@ -52,7 +99,11 @@ export default function Signup() {
               <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/30" size={15} />
               <input
                 type="password"
-                placeholder="••••••••"
+                required
+                minLength={6}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="•••••••• (min 6 characters)"
                 className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 pl-10 w-full text-white placeholder-white/30 focus:outline-none focus:border-white/40 text-sm transition-colors"
               />
             </div>
@@ -60,9 +111,11 @@ export default function Signup() {
 
           <button
             type="submit"
-            className="w-full bg-white text-black py-3 rounded-2xl font-medium hover:bg-white/90 transition-colors mt-2 text-sm"
+            disabled={loading}
+            className="w-full bg-white text-black py-3 rounded-2xl font-medium hover:bg-white/90 transition-colors mt-2 text-sm flex items-center justify-center gap-2 cursor-pointer"
           >
-            Get Started — It's Free
+            {loading ? <Loader2 size={16} className="animate-spin" /> : null}
+            <span>{loading ? 'Creating account...' : "Get Started — It's Free"}</span>
           </button>
         </form>
 
