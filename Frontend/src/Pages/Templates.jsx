@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { Link } from 'react-router';
-import { Eye, ArrowRight } from 'lucide-react';
+import { LuEye as Eye, LuArrowRight as ArrowRight } from 'react-icons/lu';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 

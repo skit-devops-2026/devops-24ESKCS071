@@ -1,6 +1,6 @@
 import { useRef } from "react"
 import { motion, useScroll, useTransform } from 'framer-motion'
-import { ArrowDown } from "lucide-react"
+import { LuArrowDown as ArrowDown } from "react-icons/lu"
 
 const sections = [
     {

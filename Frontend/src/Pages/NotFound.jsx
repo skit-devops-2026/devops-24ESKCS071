@@ -1,7 +1,7 @@
 import React from 'react'
 import { Link } from 'react-router'
 import { motion } from 'framer-motion'
-import { ArrowLeft } from 'lucide-react'
+import { LuArrowLeft as ArrowLeft } from 'react-icons/lu'
 
 export default function NotFound() {
   return (

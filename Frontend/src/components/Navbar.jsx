@@ -1,7 +1,7 @@
-import React, { useState } from 'react'
-import { Link, useLocation } from "react-router"
+import React, { useState, useEffect } from 'react'
+import { Link, useLocation, useNavigate } from "react-router"
 import { cn } from "@/lib/utils"
-import { Menu, X } from 'lucide-react'
+import { LuMenu as Menu, LuX as X, LuUser as User, LuLogOut as LogOut } from 'react-icons/lu'
 import {
   NavigationMenu,
   NavigationMenuContent,
@@ -13,7 +13,25 @@ import {
 
 const Navbar = () => {
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [currentUser, setCurrentUser] = useState(null)
   const location = useLocation()
+  const navigate = useNavigate()
+
+  useEffect(() => {
+    try {
+      const userStr = localStorage.getItem('craftcv_user')
+      if (userStr) {
+        setCurrentUser(JSON.parse(userStr))
+      }
+    } catch (e) {}
+  }, [location])
+
+  const handleLogout = () => {
+    localStorage.removeItem('craftcv_token')
+    localStorage.removeItem('craftcv_user')
+    setCurrentUser(null)
+    navigate('/')
+  }
 
   const isActive = (path) => location.pathname === path
 
@@ -71,6 +89,40 @@ const Navbar = () => {
               <NavigationMenuItem>
                 <NavigationMenuLink asChild>
                   <Link
+                    to='/portfolio/aryan-sharma'
+                    className={cn(
+                      'px-4 py-2 text-sm transition-colors rounded-md flex items-center gap-1.5',
+                      location.pathname.startsWith('/portfolio') ? 'text-white font-medium' : 'text-white/70 hover:text-white'
+                    )}
+                  >
+                    <span>Live Portfolio</span>
+                    <span className="text-[10px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-1.5 py-0.2 rounded-full font-mono">
+                      LIVE
+                    </span>
+                  </Link>
+                </NavigationMenuLink>
+              </NavigationMenuItem>
+
+              <NavigationMenuItem>
+                <NavigationMenuLink asChild>
+                  <Link
+                    to='/interview'
+                    className={cn(
+                      'px-4 py-2 text-sm transition-colors rounded-md flex items-center gap-1.5',
+                      isActive('/interview') ? 'text-white font-medium' : 'text-white/70 hover:text-white'
+                    )}
+                  >
+                    <span>Interview Prep</span>
+                    <span className="text-[10px] bg-purple-500/20 text-purple-300 border border-purple-500/30 px-1.5 py-0.2 rounded-full font-mono">
+                      AI
+                    </span>
+                  </Link>
+                </NavigationMenuLink>
+              </NavigationMenuItem>
+
+              <NavigationMenuItem>
+                <NavigationMenuLink asChild>
+                  <Link
                     to='/pricing'
                     className={cn(
                       'px-4 py-2 text-sm transition-colors rounded-md',
@@ -87,15 +139,36 @@ const Navbar = () => {
         </div>
 
         <div className='hidden md:flex gap-4 items-center'>
-          <Link to='/login' className='text-sm text-white/70 hover:text-white transition-colors cursor-pointer'>
-            Login
-          </Link>
-          <Link
-            to='/signup'
-            className='text-sm text-black bg-white px-5 py-2.5 rounded-3xl cursor-pointer hover:bg-white/90 transition-colors font-medium'
-          >
-            Sign Up
-          </Link>
+          {currentUser ? (
+            <div className="flex items-center gap-3">
+              <Link
+                to="/dashboard"
+                className="text-sm font-medium text-white hover:text-white/80 flex items-center gap-2 bg-white/10 px-4 py-2 rounded-2xl border border-white/10"
+              >
+                <User size={14} />
+                <span>Dashboard</span>
+              </Link>
+              <button
+                onClick={handleLogout}
+                title="Logout"
+                className="text-xs text-white/50 hover:text-rose-400 p-2 transition-colors cursor-pointer"
+              >
+                <LogOut size={16} />
+              </button>
+            </div>
+          ) : (
+            <>
+              <Link to='/login' className='text-sm text-white/70 hover:text-white transition-colors cursor-pointer'>
+                Login
+              </Link>
+              <Link
+                to='/signup'
+                className='text-sm text-black bg-white px-5 py-2.5 rounded-3xl cursor-pointer hover:bg-white/90 transition-colors font-medium'
+              >
+                Sign Up
+              </Link>
+            </>
+          )}
         </div>
 
         <button
@@ -127,6 +200,26 @@ const Navbar = () => {
             ))}
             <div className='border-t border-white/10 my-1' />
             <Link
+              to='/portfolio/aryan-sharma'
+              className='text-sm text-white/70 hover:text-white transition-colors flex items-center justify-between'
+              onClick={() => setMobileOpen(false)}
+            >
+              <span>Live Web Portfolio</span>
+              <span className="text-[10px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-1.5 py-0.5 rounded-full font-mono">
+                LIVE
+              </span>
+            </Link>
+            <Link
+              to='/interview'
+              className='text-sm text-white/70 hover:text-white transition-colors flex items-center justify-between'
+              onClick={() => setMobileOpen(false)}
+            >
+              <span>AI Interview &amp; Viva Prep</span>
+              <span className="text-[10px] bg-purple-500/20 text-purple-300 border border-purple-500/30 px-1.5 py-0.5 rounded-full font-mono">
+                AI
+              </span>
+            </Link>
+            <Link
               to='/pricing'
               className='text-sm text-white/70 hover:text-white transition-colors'
               onClick={() => setMobileOpen(false)}
@@ -134,20 +227,32 @@ const Navbar = () => {
               Pricing
             </Link>
             <div className='border-t border-white/10 my-1' />
-            <Link
-              to='/login'
-              className='text-sm text-white/70 hover:text-white transition-colors'
-              onClick={() => setMobileOpen(false)}
-            >
-              Login
-            </Link>
-            <Link
-              to='/signup'
-              className='text-sm text-black bg-white px-5 py-3 rounded-3xl text-center font-medium hover:bg-white/90 transition-colors'
-              onClick={() => setMobileOpen(false)}
-            >
-              Sign Up
-            </Link>
+            {currentUser ? (
+              <Link
+                to='/dashboard'
+                className='text-sm text-black bg-white px-5 py-3 rounded-3xl text-center font-medium hover:bg-white/90 transition-colors'
+                onClick={() => setMobileOpen(false)}
+              >
+                Go to Dashboard
+              </Link>
+            ) : (
+              <>
+                <Link
+                  to='/login'
+                  className='text-sm text-white/70 hover:text-white transition-colors'
+                  onClick={() => setMobileOpen(false)}
+                >
+                  Login
+                </Link>
+                <Link
+                  to='/signup'
+                  className='text-sm text-black bg-white px-5 py-3 rounded-3xl text-center font-medium hover:bg-white/90 transition-colors'
+                  onClick={() => setMobileOpen(false)}
+                >
+                  Sign Up
+                </Link>
+              </>
+            )}
           </div>
         </div>
       )}

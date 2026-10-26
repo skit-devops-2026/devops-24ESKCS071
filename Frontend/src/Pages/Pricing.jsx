@@ -2,7 +2,7 @@ import { Link } from 'react-router'
 import { motion } from 'framer-motion'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
-import { Check, Star } from 'lucide-react'
+import { LuCheck as Check, LuStar as Star } from 'react-icons/lu'
 
 const plans = [
   {
