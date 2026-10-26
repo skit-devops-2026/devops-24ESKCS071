@@ -7,6 +7,8 @@
 | Roll No. | Name | GitHub username |
 |---|---|---|
 | 24ESKCS071 | Aryan Sharma | Aryansharma-ent |
+| 24ESKCS071 | Bharat Dhakad | bharatdhakad |
+| 24ESKCS071 | Bharat Kumar Sand | itzbharatkr |
 
 ## About
 
@@ -14,9 +16,9 @@ CraftCV is an interactive web application designed to help job seekers build ATS
 
 ## Tech stack
 
-- Frontend: <e.g. React>
-- Backend: <e.g. Node.js / Express>
-- Database: <e.g. PostgreSQL>
+- Frontend: React / Vite / Tailwind CSS
+- Backend: Node.js / Express
+- Database: MongoDB
 
 ## Running locally
 
@@ -27,7 +29,7 @@ make run
 
 ## Live URL
 
-[https://skit-devops-2026.github.io/devops-24ESKCS071/](https://skit-devops-2026.github.io/devops-24ESKCS084/)
+[https://skit-devops-2026.github.io/devops-24ESKCS071/](https://skit-devops-2026.github.io/devops-24ESKCS071/)
 
 ## Health endpoint
 
