@@ -97,6 +97,12 @@ export const validateCreatePortfolio = (data) => {
 
   // Prepare sanitized copy with normalized slug
   const sanitized = { ...data };
+  delete sanitized._id;
+  delete sanitized.id;
+  delete sanitized.createdAt;
+  delete sanitized.updatedAt;
+  delete sanitized.__v;
+
   if (sanitized.slug) {
     sanitized.slug = sanitizeSlug(sanitized.slug);
   }
@@ -104,6 +110,69 @@ export const validateCreatePortfolio = (data) => {
     const baseName = sanitized.personalInfo?.fullName || 'portfolio';
     const cleanBase = sanitizeSlug(baseName) || 'portfolio';
     sanitized.slug = `${cleanBase}-${Date.now().toString().slice(-4)}`;
+  }
+
+  return { isValid: true, errors: [], sanitizedData: sanitized };
+};
+
+/**
+ * Validates portfolio update request payload and protects system-managed fields.
+ * 
+ * @param {object} data - Request body
+ * @returns {{ isValid: boolean, errors: string[], sanitizedData?: object }}
+ */
+export const validateUpdatePortfolio = (data) => {
+  const errors = [];
+
+  if (!data || typeof data !== 'object' || Array.isArray(data)) {
+    return { isValid: false, errors: ['Update payload must be a JSON object.'] };
+  }
+
+  const sanitized = { ...data };
+  // Strip immutable and server-managed fields
+  delete sanitized._id;
+  delete sanitized.id;
+  delete sanitized.createdAt;
+  delete sanitized.updatedAt;
+  delete sanitized.__v;
+
+  if (sanitized.template !== undefined && !ALLOWED_TEMPLATES.includes(sanitized.template)) {
+    errors.push(`Invalid template '${sanitized.template}'. Allowed templates: ${ALLOWED_TEMPLATES.join(', ')}.`);
+  }
+
+  if (sanitized.mode !== undefined && !ALLOWED_MODES.includes(sanitized.mode)) {
+    errors.push(`Invalid mode '${sanitized.mode}'. Allowed modes: ${ALLOWED_MODES.join(', ')}.`);
+  }
+
+  if (sanitized.personalInfo !== undefined) {
+    if (typeof sanitized.personalInfo !== 'object' || Array.isArray(sanitized.personalInfo)) {
+      errors.push('personalInfo must be an object.');
+    } else if (sanitized.personalInfo.fullName !== undefined) {
+      if (typeof sanitized.personalInfo.fullName !== 'string' || sanitized.personalInfo.fullName.trim().length === 0) {
+        errors.push('personalInfo.fullName must be a non-empty string.');
+      }
+    }
+  }
+
+  if (sanitized.projects !== undefined && !Array.isArray(sanitized.projects)) {
+    errors.push('projects must be an array.');
+  }
+  if (sanitized.experience !== undefined && !Array.isArray(sanitized.experience)) {
+    errors.push('experience must be an array.');
+  }
+  if (sanitized.education !== undefined && !Array.isArray(sanitized.education)) {
+    errors.push('education must be an array.');
+  }
+
+  if (sanitized.slug !== undefined) {
+    sanitized.slug = sanitizeSlug(sanitized.slug);
+    if (!sanitized.slug) {
+      errors.push('slug cannot be empty when provided.');
+    }
+  }
+
+  if (errors.length > 0) {
+    return { isValid: false, errors };
   }
 
   return { isValid: true, errors: [], sanitizedData: sanitized };

@@ -1,6 +1,10 @@
 import { Portfolio } from '../models/Portfolio.js';
 import mongoose from 'mongoose';
-import { validateCreatePortfolio, parseIdentifier } from '../validators/portfolioValidator.js';
+import {
+  validateCreatePortfolio,
+  validateUpdatePortfolio,
+  parseIdentifier
+} from '../validators/portfolioValidator.js';
 
 // In-memory cache fallback in case MongoDB service is not started on host machine
 const inMemoryPortfolios = new Map();
@@ -96,30 +100,65 @@ export const createPortfolio = async (req, res) => {
 
 export const updatePortfolio = async (req, res) => {
   const { id } = req.params;
-  try {
-    const data = req.body;
+  const parsed = parseIdentifier(id);
+  if (!parsed.isValid) {
+    return res.status(404).json({ success: false, message: `Portfolio '${id}' not found` });
+  }
 
+  const { cleanId, isObjectId, isSlug } = parsed;
+
+  const validation = validateUpdatePortfolio(req.body);
+  if (!validation.isValid) {
+    return res.status(400).json({
+      success: false,
+      message: validation.errors.join(' ')
+    });
+  }
+
+  const data = validation.sanitizedData;
+
+  try {
     if (mongoose.connection.readyState === 1) {
       let updated = null;
-      if (mongoose.Types.ObjectId.isValid(id)) {
-        updated = await Portfolio.findByIdAndUpdate(id, data, { new: true, runValidators: true });
+      if (isObjectId) {
+        updated = await Portfolio.findByIdAndUpdate(cleanId, data, { new: true, runValidators: true });
       }
-      if (!updated) {
-        updated = await Portfolio.findOneAndUpdate({ slug: id.toLowerCase() }, data, { new: true, runValidators: true });
+      if (!updated && isSlug) {
+        updated = await Portfolio.findOneAndUpdate({ slug: cleanId.toLowerCase() }, data, { new: true, runValidators: true });
       }
 
       if (!updated) {
-        return res.status(404).json({ success: false, message: 'Portfolio not found' });
+        return res.status(404).json({ success: false, message: `Portfolio '${cleanId}' not found` });
       }
       return res.status(200).json({ success: true, data: updated, message: 'Portfolio updated in MongoDB!' });
     } else {
-      const existing = inMemoryPortfolios.get(id);
+      let key = null;
+      let existing = null;
+
+      if (inMemoryPortfolios.has(cleanId)) {
+        key = cleanId;
+        existing = inMemoryPortfolios.get(cleanId);
+      } else {
+        const entry = Array.from(inMemoryPortfolios.entries()).find(([_, p]) => p.slug === cleanId.toLowerCase());
+        if (entry) {
+          key = entry[0];
+          existing = entry[1];
+        }
+      }
+
       if (existing) {
-        const merged = { ...existing, ...data, updatedAt: new Date() };
-        inMemoryPortfolios.set(id, merged);
+        // Prevent mutation of protected fields in memory
+        const merged = {
+          ...existing,
+          ...data,
+          _id: existing._id,
+          createdAt: existing.createdAt,
+          updatedAt: new Date()
+        };
+        inMemoryPortfolios.set(key, merged);
         return res.status(200).json({ success: true, data: merged });
       }
-      return res.status(404).json({ success: false, message: 'Portfolio not found in memory' });
+      return res.status(404).json({ success: false, message: `Portfolio '${cleanId}' not found in memory` });
     }
   } catch (error) {
     console.error('[Update Portfolio Error]:', error.message);
