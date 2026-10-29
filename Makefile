@@ -9,7 +9,7 @@ IMAGE_NAME ?= craftcv-frontend
 IMAGE_TAG  ?= latest
 REGISTRY   ?= docker.io/$(DOCKER_USER)
 
-.PHONY: install lint test build run \
+.PHONY: install install-server lint test test-server build run \
         docker-build docker-up docker-push \
         k8s-apply k8s-status k8s-delete
 
@@ -18,12 +18,18 @@ REGISTRY   ?= docker.io/$(DOCKER_USER)
 install:
 	cd Frontend && npm ci --include=dev
 
+install-server:
+	cd server && npm ci
+
 lint:
 	cd Frontend && npm run lint
 
-# No unit test suite yet — placeholder passes CI until tests are added.
+# Runs server test suite when server dependencies are installed
 test:
-	@echo "No automated tests configured yet. Add Jest/Vitest here."
+	@if [ -d "server/node_modules" ]; then cd server && npm test; else echo "Run 'make install-server' to install server test dependencies."; fi
+
+test-server:
+	cd server && npm test
 
 build:
 	cd Frontend && npm run build
