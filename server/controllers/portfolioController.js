@@ -1,6 +1,6 @@
 import { Portfolio } from '../models/Portfolio.js';
 import mongoose from 'mongoose';
-import { validateCreatePortfolio } from '../validators/portfolioValidator.js';
+import { validateCreatePortfolio, parseIdentifier } from '../validators/portfolioValidator.js';
 
 // In-memory cache fallback in case MongoDB service is not started on host machine
 const inMemoryPortfolios = new Map();
@@ -28,24 +28,30 @@ export const getPortfolios = async (req, res) => {
 
 export const getPortfolio = async (req, res) => {
   const { id } = req.params;
+  const parsed = parseIdentifier(id);
+  if (!parsed.isValid) {
+    return res.status(404).json({ success: false, message: `Portfolio '${id}' not found` });
+  }
+
+  const { cleanId, isObjectId, isSlug } = parsed;
 
   try {
     let portfolio = null;
 
     if (mongoose.connection.readyState === 1) {
-      if (mongoose.Types.ObjectId.isValid(id)) {
-        portfolio = await Portfolio.findById(id);
+      if (isObjectId) {
+        portfolio = await Portfolio.findById(cleanId);
       }
-      if (!portfolio) {
-        portfolio = await Portfolio.findOne({ slug: id.toLowerCase() });
+      if (!portfolio && isSlug) {
+        portfolio = await Portfolio.findOne({ slug: cleanId.toLowerCase() });
       }
     } else {
-      portfolio = inMemoryPortfolios.get(id) || 
-        Array.from(inMemoryPortfolios.values()).find(p => p.slug === id.toLowerCase());
+      portfolio = inMemoryPortfolios.get(cleanId) || 
+        Array.from(inMemoryPortfolios.values()).find(p => p.slug === cleanId.toLowerCase());
     }
 
     if (!portfolio) {
-      return res.status(404).json({ success: false, message: `Portfolio '${id}' not found` });
+      return res.status(404).json({ success: false, message: `Portfolio '${cleanId}' not found` });
     }
 
     return res.status(200).json({ success: true, data: portfolio });
@@ -123,15 +129,43 @@ export const updatePortfolio = async (req, res) => {
 
 export const deletePortfolio = async (req, res) => {
   const { id } = req.params;
+  const parsed = parseIdentifier(id);
+  if (!parsed.isValid) {
+    return res.status(404).json({ success: false, message: `Portfolio '${id}' not found` });
+  }
+
+  const { cleanId, isObjectId, isSlug } = parsed;
+
   try {
     if (mongoose.connection.readyState === 1) {
-      await Portfolio.findByIdAndDelete(id);
-      return res.status(200).json({ success: true, message: 'Portfolio deleted from MongoDB' });
+      let deleted = null;
+      if (isObjectId) {
+        deleted = await Portfolio.findByIdAndDelete(cleanId);
+      }
+      if (!deleted && isSlug) {
+        deleted = await Portfolio.findOneAndDelete({ slug: cleanId.toLowerCase() });
+      }
+
+      if (!deleted) {
+        return res.status(404).json({ success: false, message: `Portfolio '${cleanId}' not found` });
+      }
+      return res.status(200).json({ success: true, message: 'Portfolio deleted successfully' });
     } else {
-      inMemoryPortfolios.delete(id);
-      return res.status(200).json({ success: true, message: 'Portfolio removed from memory' });
+      if (inMemoryPortfolios.has(cleanId)) {
+        inMemoryPortfolios.delete(cleanId);
+        return res.status(200).json({ success: true, message: 'Portfolio removed from memory' });
+      }
+
+      const entry = Array.from(inMemoryPortfolios.entries()).find(([_, p]) => p.slug === cleanId.toLowerCase());
+      if (entry) {
+        inMemoryPortfolios.delete(entry[0]);
+        return res.status(200).json({ success: true, message: 'Portfolio removed from memory' });
+      }
+
+      return res.status(404).json({ success: false, message: `Portfolio '${cleanId}' not found in memory` });
     }
   } catch (error) {
+    console.error('[Delete Portfolio Error]:', error.message);
     return res.status(500).json({ success: false, message: error.message });
   }
 };

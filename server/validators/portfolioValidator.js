@@ -2,6 +2,29 @@ export const ALLOWED_TEMPLATES = ['bento', 'terminal', 'executive'];
 export const ALLOWED_MODES = ['manual', 'github'];
 
 /**
+ * Validates whether a string is a potentially valid identifier (24-hex ObjectId or slug).
+ * @param {string} id 
+ * @returns {{ isValid: boolean, isObjectId: boolean, isSlug: boolean, cleanId: string }}
+ */
+export const parseIdentifier = (id) => {
+  if (!id || typeof id !== 'string') {
+    return { isValid: false, isObjectId: false, isSlug: false, cleanId: '' };
+  }
+  const cleanId = id.trim();
+  if (cleanId.length === 0 || cleanId.length > 120) {
+    return { isValid: false, isObjectId: false, isSlug: false, cleanId: '' };
+  }
+  const isObjectId = /^[a-fA-F0-9]{24}$/.test(cleanId);
+  const isSlug = /^[a-z0-9_-]+$/i.test(cleanId);
+  return {
+    isValid: isObjectId || isSlug,
+    isObjectId,
+    isSlug,
+    cleanId
+  };
+};
+
+/**
  * Normalizes a slug to lowercase alphanumeric characters with hyphens.
  * @param {string} slug 
  * @returns {string}
