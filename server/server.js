@@ -8,6 +8,8 @@ import githubRoutes from './routes/githubRoutes.js';
 import authRoutes from './routes/authRoutes.js';
 import agentRoutes from './routes/agentRoutes.js';
 
+import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
+
 dotenv.config();
 
 const app = express();
@@ -45,12 +47,21 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-app.listen(PORT, () => {
-  console.log(`=========================================`);
-  console.log(`🚀 CraftCV Server running on port ${PORT}`);
-  console.log(`📡 Endpoints:`);
-  console.log(`   - Auth: http://localhost:${PORT}/api/auth`);
-  console.log(`   - Portfolios: http://localhost:${PORT}/api/portfolios`);
-  console.log(`   - GitHub Ingest: http://localhost:${PORT}/api/github/:username`);
-  console.log(`=========================================`);
-});
+// 404 & Centralized Error Handlers
+app.use(notFoundHandler);
+app.use(errorHandler);
+
+if (process.env.NODE_ENV !== 'test') {
+  app.listen(PORT, () => {
+    console.log(`=========================================`);
+    console.log(`🚀 CraftCV Server running on port ${PORT}`);
+    console.log(`📡 Endpoints:`);
+    console.log(`   - Auth: http://localhost:${PORT}/api/auth`);
+    console.log(`   - Portfolios: http://localhost:${PORT}/api/portfolios`);
+    console.log(`   - GitHub Ingest: http://localhost:${PORT}/api/github/:username`);
+    console.log(`=========================================`);
+  });
+}
+
+export default app;
+export { app };
