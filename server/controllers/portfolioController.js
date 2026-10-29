@@ -1,5 +1,6 @@
 import { Portfolio } from '../models/Portfolio.js';
 import mongoose from 'mongoose';
+import { validateCreatePortfolio } from '../validators/portfolioValidator.js';
 
 // In-memory cache fallback in case MongoDB service is not started on host machine
 const inMemoryPortfolios = new Map();
@@ -56,13 +57,15 @@ export const getPortfolio = async (req, res) => {
 
 export const createPortfolio = async (req, res) => {
   try {
-    const data = req.body;
-
-    // Generate clean slug if not provided
-    if (!data.slug) {
-      const baseName = data.personalInfo?.fullName || 'portfolio';
-      data.slug = `${baseName.toLowerCase().replace(/[^a-z0-9]/g, '-')}-${Date.now().toString().slice(-4)}`;
+    const validation = validateCreatePortfolio(req.body);
+    if (!validation.isValid) {
+      return res.status(400).json({
+        success: false,
+        message: validation.errors.join(' ')
+      });
     }
+
+    const data = validation.sanitizedData;
 
     if (mongoose.connection.readyState === 1) {
       // Check if slug already exists
